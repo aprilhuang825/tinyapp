@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 
 const generateRandomString = function() {
   let result = '';
@@ -15,6 +16,7 @@ const generateRandomString = function() {
 }
 
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -77,3 +79,10 @@ app.post("/urls/:shortURL", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls`);
 }); 
+
+//add login page
+app.post("/login", (req,res) => {
+  const username = req.body.username;
+  res.cookie("sername", username);
+  res.redirect(`/urls`);
+})
