@@ -8,7 +8,7 @@ const generateRandomString = function() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   
   while (result.length < 6) {
-    resilt += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[Math.floor(Math.random() * chars.length)];
   }
 
   return result;
@@ -65,8 +65,15 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(`${longURL}`);
 });
 
-//removes a URL resource
+//removes a URL resource using Delete button
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+}); 
+
+//updates a URL resource using Edit button
+app.post("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls`);
 }); 
