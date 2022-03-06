@@ -81,15 +81,21 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect(`/urls`);
 }); 
 
-//add login function
+//create login function
 app.post("/login", (req,res) => {
   const username = req.body.username;
   res.cookie("username", username);
   res.redirect(`/urls`);
 })
 
-//add logout function
+//create logout function
 app.post("/logout", (req,res) => {
   res.clearCookie("username");
   res.redirect(`/urls`);
+})
+
+// read registration page
+app.get("/register", (req,res) => {
+  const templateVars = { username: req.cookies["username"] };
+  res.render(`urls_registration`, templateVars);
 })
