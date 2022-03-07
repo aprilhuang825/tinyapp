@@ -113,8 +113,25 @@ app.get("/register", (req,res) => {
   res.render(`urls_registration`, templateVars);
 })
 
+// check if email entered already existed in the database
+const checkEmailExists = function (email) {
+  for (const user in users) {
+    if(users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //create register function
 app.post("/register", (req,res) => {
+ if (!(req.body.email) || !(req.body.password)) {
+  res.status(400).send("Need to enter both email and password");
+  return
+ } else if (checkEmailExists(req.body.email)) {
+  res.status(400).send("Email already existed, please sign in");
+  return
+ } else {
   const userID = generateRandomString();
   users[userID] = {
     id: userID,
@@ -123,4 +140,5 @@ app.post("/register", (req,res) => {
   }
   res.cookie("user_id", userID);
   res.redirect(`/urls`);
+ }
 })
