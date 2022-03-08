@@ -94,6 +94,12 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect(`/urls`);
 }); 
 
+//// read registration page
+app.get("/login", (req,res) => {
+  const templateVars = { user:users[req.cookies['user_id']] };
+  res.render(`urls_login`, templateVars);
+})
+
 //create login function
 app.post("/login", (req,res) => {
   const username = req.body.username;
@@ -103,7 +109,7 @@ app.post("/login", (req,res) => {
 
 //create logout function
 app.post("/logout", (req,res) => {
-  res.clearCookie("username");
+  res.clearCookie(user.email);
   res.redirect(`/urls`);
 })
 
