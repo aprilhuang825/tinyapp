@@ -143,6 +143,12 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL].longURL
+  const userID = req.cookies['user_id'];
+  
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(400).send("Invalid credentials");
+  } 
+  
   longURL = req.body.updatedURL;
   res.redirect(`/urls`);
 });
@@ -151,8 +157,13 @@ app.post("/urls/:shortURL", (req, res) => {
 //removes a URL resource using Delete button
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
-  delete longURL;
+  const userID = req.cookies['user_id'];
+  
+  if (userID !== urlDatabase[shortURL].userID) {
+    return res.status(400).send("Invalid credentials");
+  } 
+
+  delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 
