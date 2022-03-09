@@ -6,6 +6,8 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
 const bcrypt = require('bcryptjs');
 
+const {getUserByEmail} = require("./helpers");
+
 const generateRandomString = function() {
   let result = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -16,18 +18,6 @@ const generateRandomString = function() {
 
   return result;
 };
-
-// check if email entered already existed in the database
-const findUserByEmail = function(email, users) {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-};
-
 
 app.use(bodyParser.urlencoded({extended: true}));
 //app.use(cookieParser());
@@ -185,7 +175,7 @@ app.get("/login", (req,res) => {
 app.post("/login", (req,res) => {
   const email = req.body.email.trim();
   const password = req.body.password.trim();
-  const user = findUserByEmail(email, users);
+  const user = getUserByEmail(email, users);
 
   if (!email || !password) {
     return res.status(400).send("Invalid credentials");
@@ -223,7 +213,7 @@ app.get("/register", (req,res) => {
 app.post("/register", (req,res) => {
   if (!(req.body.email.trim()) || !(req.body.password.trim())) {
     res.status(400).send("Need to enter both email and password");
-  } else if (findUserByEmail(req.body.email.trim(), users)) {
+  } else if (getUserByEmail(req.body.email.trim(), users)) {
     res.status(400).send("Email already existed, please sign in");
   } else {
     const userID = generateRandomString();
