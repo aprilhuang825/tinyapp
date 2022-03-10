@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 //const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const methodOverride = require('method-override');
 
 const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
 
@@ -15,6 +16,7 @@ app.use(cookieSession({
   keys: ['admin'],
   maxAge: 24 * 60 * 60 * 1000
 }));
+app.use(methodOverride('_method'));
 app.set("view engine", "ejs");
 
 let users = {
@@ -116,7 +118,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 
 //updates a URL resource using Edit button
-app.post("/urls/:shortURL", (req, res) => {
+app.put("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const userID = req.session.user_id;
   
@@ -130,7 +132,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 //removes a URL resource using Delete button
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const userID = req.session.user_id;
   
@@ -176,7 +178,7 @@ app.post("/login", (req,res) => {
 
 //create logout function
 app.post("/logout", (req,res) => {
-  res.clearCookie('session');
+  req.session = null;
   res.redirect(`/urls`);
 });
 
