@@ -3,21 +3,10 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 //const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
-const {getUserByEmail} = require("./helpers");
-
-const generateRandomString = function() {
-  let result = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  
-  while (result.length < 6) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-
-  return result;
-};
+const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
 
 app.use(bodyParser.urlencoded({extended: true}));
 //app.use(cookieParser());
@@ -28,38 +17,28 @@ app.use(cookieSession({
 }));
 app.set("view engine", "ejs");
 
-let users = { 
+let users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
   "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: bcrypt.hashSync("dishwasher-funk", 10)
   }
-}
+};
 
 let urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "aJ48lW"
   },
- i3BoGr: {
+  i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ48lW"
-  } 
-};
-
-const urlsForUser = function(id) {
-  let Urls = {};
-  for (const shortURL in urlDatabase) {
-    if(urlDatabase[shortURL].userID === id) {
-      Urls[shortURL] = urlDatabase[shortURL];
-    }
   }
-  return Urls;
 };
 
 app.get("/", (req, res) => {
@@ -84,27 +63,27 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  const userUrls = urlsForUser(userID);
+  const userUrls = urlsForUser(userID, urlDatabase);
   const templateVars = { user:users[userID], urls: userUrls };
 
-  res.render("urls_index", templateVars); 
+  res.render("urls_index", templateVars);
 });
 
 
 app.post("/urls", (req, res) => {
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
       userID: req.session.user_id
     };
     res.redirect(`/urls/${shortURL}`);
-  };
+  }
 });
 
 
 app.get("/urls/new", (req, res) => {
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     const templateVars = { user: users[req.session.user_id] };
     res.render("urls_new", templateVars);
   } else {
@@ -117,7 +96,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL].longURL;
   const userID = req.session.user_id;
-  const userUrls = urlsForUser(userID);
+  const userUrls = urlsForUser(userID, urlDatabase);
   const templateVars = { user:users[userID], urls: userUrls, shortURL: shortURL, longURL: longURL };
 
   res.render("urls_show", templateVars);
@@ -128,7 +107,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL].longURL;
-  if(shortURL) {
+  if (shortURL) {
     res.redirect(longURL);
   } else {
     res.status(404).send("ShortURL entered doesn't exist");
@@ -143,7 +122,7 @@ app.post("/urls/:shortURL", (req, res) => {
   
   if (userID !== urlDatabase[shortURL].userID) {
     return res.status(400).send("Invalid credentials");
-  } 
+  }
 
   urlDatabase[shortURL].longURL = req.body.updatedURL;
   res.redirect(`/urls`);
@@ -157,7 +136,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   
   if (userID !== urlDatabase[shortURL].userID) {
     return res.status(400).send("Invalid credentials");
-  } 
+  }
 
   delete urlDatabase[shortURL];
   res.redirect("/urls");
