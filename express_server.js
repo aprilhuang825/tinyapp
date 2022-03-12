@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-//const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const methodOverride = require('method-override');
@@ -10,7 +9,6 @@ const methodOverride = require('method-override');
 const {getUserByEmail, generateRandomString, urlsForUser} = require("./helpers");
 
 app.use(bodyParser.urlencoded({extended: true}));
-//app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ['admin'],
@@ -43,8 +41,13 @@ let urlDatabase = {
   }
 };
 
+//redirect to /urls if user is logged in, otherwise redirect to login page
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 
@@ -55,11 +58,6 @@ app.listen(PORT, () => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 
@@ -80,6 +78,8 @@ app.post("/urls", (req, res) => {
       userID: req.session.user_id
     };
     res.redirect(`/urls/${shortURL}`);
+  } else {
+    return res.status(401).send("You need to login first");
   }
 });
 
@@ -96,9 +96,17 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
   const userID = req.session.user_id;
   const userUrls = urlsForUser(userID, urlDatabase);
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send("The shortURL you entered doesn't exist");
+  }
+
+  if (!userUrls[shortURL]) {
+    return res.status(404).send("You are not authorized to view the URL");
+  }
+
+  const longURL = urlDatabase[shortURL].longURL;
   const templateVars = { user:users[userID], urls: userUrls, shortURL: shortURL, longURL: longURL };
 
   res.render("urls_show", templateVars);
@@ -112,7 +120,7 @@ app.get("/u/:shortURL", (req, res) => {
   if (shortURL) {
     res.redirect(longURL);
   } else {
-    res.status(404).send("ShortURL entered doesn't exist");
+    return res.status(404).send("ShortURL entered doesn't exist");
   }
 });
 
@@ -185,6 +193,9 @@ app.post("/logout", (req,res) => {
 
 // read registration page
 app.get("/register", (req,res) => {
+  if (req.session.user_id) {
+    res.redirect(`/urls`);
+  }
   const templateVars = { user:users[req.session.user_id] };
   res.render(`urls_registration`, templateVars);
 });
@@ -192,16 +203,19 @@ app.get("/register", (req,res) => {
 
 //create register function
 app.post("/register", (req,res) => {
-  if (!(req.body.email.trim()) || !(req.body.password.trim())) {
-    res.status(400).send("Need to enter both email and password");
-  } else if (getUserByEmail(req.body.email.trim(), users)) {
-    res.status(400).send("Email already existed, please sign in");
+  const email = req.body.email.trim();
+  const password = req.body.password.trim();
+  const userID = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  if (!(email) || !(password)) {
+    return res.status(400).send("Need to enter both email and password");
+  } else if (getUserByEmail(email, users)) {
+    return res.status(400).send("Email already existed, please sign in");
   } else {
-    const userID = generateRandomString();
-    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     users[userID] = {
       id: userID,
-      email: req.body.email,
+      email: email,
       password: hashedPassword
     };
     req.session.user_id = userID;
